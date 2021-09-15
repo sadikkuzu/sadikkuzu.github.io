@@ -52,7 +52,7 @@ $('#morpheous').hover(
             elm.html(old);
             spin = setInterval("rword()", hover_spinInterval);
             mpin = setInterval("ayracArttir()", hover_mpinInterval);
-        
+
         },
         function() {
             clearInterval(spin);
