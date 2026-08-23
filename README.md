@@ -8,7 +8,7 @@
 ### Local development
 
 ```
-docker-compose up -d
+docker compose up -d
 open http://localhost:4000
-docker-compose down
+docker compose down
 ```
