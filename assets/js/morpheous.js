@@ -1,65 +1,98 @@
-var myname = "SADIK KUZU"
-$('#morpheous').html(myname);
-var ayrac = 0;
-//interval milisaniyerli
-var hover_spinInterval = 20;
-var hover_mpinInterval = 300;
-var taklayaBasla_spinInterval = 20;
-var taklayaBasla_mpinInterval = 200;
+/*
+ * Matrix-style reveal for the page heading: the name starts scrambled and
+ * locks into place one character at a time, left to right.
+ */
+(function () {
+    "use strict";
 
-function rnum(string_length) {
-    var chars = "0123456789ABCDEFGHIJKLMNOPRSTUVWXYZabcdefghijklmnoprstuvwxyz";
-    var randomstring = elm.html().substring(0, ayrac);
-    for(var i=ayrac; i<string_length; i++) {
-        var rn = Math.floor(Math.random() * chars.length);
-        randomstring += chars.substring(rn, rn+1);
+    var NAME = "SADIK KUZU";
+    var CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    // scramble: how often the unresolved characters are redrawn
+    // reveal:   how often one more character locks into place
+    var INTRO = { scramble: 20, reveal: 200 };
+    var HOVER = { scramble: 20, reveal: 300 };
+
+    var el = document.getElementById("morpheous");
+    if (!el) {
+        return;
     }
-    return randomstring;
-}
 
-function rword() {
-    var len = elm.html().length;
-    elm.html(rnum(len));
-}
+    var frame = null;
 
-function ayracArttir() {
-    if(ayrac<elm.html().length)
-    {
-        ayrac++;
+    function motionAllowed() {
+        return !window.matchMedia ||
+            !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     }
-    else
-    {
-        clearInterval(spin);
-        clearInterval(mpin);
-        ayrac = 0;
+
+    function randomChar() {
+        return CHARS.charAt(Math.floor(Math.random() * CHARS.length));
     }
-    elm.html(old);
-}
 
-function taklayaBasla(morfi, spinInterval, mpinInterval) {
-    elm = $(morfi);
-    old = elm.html();
-    spin = setInterval("rword()", spinInterval);
-    mpin = setInterval("ayracArttir()", mpinInterval);
-}
-
-$('#morpheous').hover(
-        function() {
-            clearInterval(spin);
-            clearInterval(mpin);
-            old = myname;
-            elm = $(this);
-            elm.html(old);
-            spin = setInterval("rword()", hover_spinInterval);
-            mpin = setInterval("ayracArttir()", hover_mpinInterval);
-
-        },
-        function() {
-            clearInterval(spin);
-            clearInterval(mpin);
-            $(this).html(myname);
-            ayrac = 0;
+    // Spaces are left alone so the word break stays visible while scrambling.
+    function scramble(locked) {
+        var out = NAME.slice(0, locked);
+        for (var i = locked; i < NAME.length; i++) {
+            out += NAME.charAt(i) === " " ? " " : randomChar();
         }
-    );
+        return out;
+    }
 
-taklayaBasla('#morpheous', taklayaBasla_spinInterval, taklayaBasla_mpinInterval);
+    function stop() {
+        if (frame !== null) {
+            window.cancelAnimationFrame(frame);
+            frame = null;
+        }
+    }
+
+    function run(timing) {
+        stop();
+
+        if (!motionAllowed()) {
+            el.textContent = NAME;
+            return;
+        }
+
+        var locked = 0;
+        var lastScramble = null;
+        var lastReveal = null;
+
+        function step(now) {
+            if (lastReveal === null) {
+                lastScramble = now;
+                lastReveal = now;
+            }
+
+            if (now - lastReveal >= timing.reveal) {
+                locked++;
+                lastReveal = now;
+            }
+
+            if (locked >= NAME.length) {
+                el.textContent = NAME;
+                frame = null;
+                return;
+            }
+
+            if (now - lastScramble >= timing.scramble) {
+                el.textContent = scramble(locked);
+                lastScramble = now;
+            }
+
+            frame = window.requestAnimationFrame(step);
+        }
+
+        frame = window.requestAnimationFrame(step);
+    }
+
+    el.addEventListener("mouseenter", function () {
+        run(HOVER);
+    });
+
+    el.addEventListener("mouseleave", function () {
+        stop();
+        el.textContent = NAME;
+    });
+
+    run(INTRO);
+}());
